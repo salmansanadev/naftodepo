@@ -2,6 +2,14 @@
 
 Offline Windows desktop pilot for fuel depots and Zambad operators. Electron + React + TypeScript + SQLite. No login, cloud service, CDN assets, or internet access is required during normal use.
 
+## Customer installation
+
+Give customers **Nafto-Depo-Setup-0.1.0-x64.exe**, not the source ZIP. Double-clicking setup installs for the current Windows account, creates shortcuts, and launches the application. All runtime dependencies are bundled; no npm, Node.js, editor, or internet is needed. Windows may still show an unsigned-publisher/SmartScreen prompt.
+
+The Windows installer workflow runs automatically on main updates. Its customer artifact is uploaded only after database tests, desktop workflow tests, building, silent installation, and tests against the installed executable pass. Download **Nafto-Depo-Customer-Installer** from the successful run. A failed or pending run does not provide a verified installer.
+
+The workflow tests renderer HTTP blocked operation, entry through the actual UI, credit repayment, PDF export, backup/restore, and restart persistence in an isolated temporary data folder. It does not certify field reliability or implement the planned features listed below.
+
 ## Run on Windows
 
 Install Node.js 24 LTS, download this repository, then open a terminal in the project folder:

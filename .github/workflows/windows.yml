@@ -2,24 +2,51 @@ name: Windows installer
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ['v*']
 permissions:
   contents: read
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - name: Install build dependencies (customers do not need these)
+        run: npm ci --include=dev --fetch-retries=5
       - run: npm test
-      - run: npm run dist:win -- --publish never
+      - run: npm run build
+      - name: Test desktop transactions, receipts, backup and persistence
+        run: npm run test:desktop
+      - name: Build self-contained one-click offline installer
+        run: npm run dist:win -- --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Install exactly as a customer (silent test)
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem release/Nafto-Depo-Setup-*-x64.exe | Select-Object -First 1).FullName
+          $process = Start-Process -FilePath $setup -ArgumentList '/S' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs/naftodepo/Nafto Depo.exe'
+          if (!(Test-Path $exe)) { throw "Installed executable missing: $exe" }
+          "NAFTO_EXECUTABLE=$exe" >> $env:GITHUB_ENV
+      - name: Test installed customer executable
+        run: npm run test:desktop
+      - name: Customer package and checksum
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory customer -Force
+          Copy-Item release/Nafto-Depo-Setup-*-x64.exe customer/
+          Copy-Item CUSTOMER-README.txt customer/
+          Get-ChildItem customer/*.exe | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $([System.IO.Path]::GetFileName($_.Path))" } | Set-Content customer/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Nafto-Depo-Windows
-          path: release/*.exe
+          name: Nafto-Depo-Customer-Installer
+          path: customer/*
+          if-no-files-found: error
+          retention-days: 30
