@@ -7,10 +7,11 @@ export function applyOperation(state,action,input,now){
  const s=JSON.parse(JSON.stringify(state));const fail=m=>{throw Error(m)};
  const nextId=rows=>rows.reduce((max,row)=>Math.max(max,row.id),0)+1;
  const driver=id=>s.drivers.find(d=>d.id===id);
- s.profile??={...defaultProfile};if(action==="snapshot")return s;if(action==="profile"){s.profile=validateProfile(input);return s;}
+ s.suppliers??=[];s.profile??={...defaultProfile};if(action==="snapshot")return s;if(action==="profile"){s.profile=validateProfile(input);return s;}
  if(!input||typeof input!=="object")fail("Invalid input");
  if(action==="driver"){s.drivers.push({id:nextId(s.drivers),...customerDetails(input),balance_paisa:0});s.drivers.sort((a,b)=>a.name.localeCompare(b.name));return s}
  if(action==="editDriver"){const d=driver(input.id);if(!d)fail("Customer not found");Object.assign(d,customerDetails(input));s.drivers.sort((a,b)=>a.name.localeCompare(b.name));return s}
+ if(action==="supplier"){const {name,phone,address}=customerDetails(input);s.suppliers.push({id:nextId(s.suppliers),name,phone,address});s.suppliers.sort((a,b)=>a.name.localeCompare(b.name));return s}
  if(action==="record"){
  const {direction,vehicle,fuel}=input;const plate=vehicleNumber(input.vehicleNumber);if(!["IN","OUT"].includes(direction)||!["Zambad","Bowser"].includes(vehicle)||!["Petrol","Diesel"].includes(fuel))fail("Invalid transaction options");
  const {drums,drumMl:drum_ml,rate:rate_paisa,total:total_ml,amount:amount_paisa,volumes}=calculateMovement(input);
