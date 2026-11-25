@@ -4,12 +4,17 @@ import './style.css';
 type Driver={id:number;name:string;phone:string;balance_paisa:number};
 type Tx={id:number;created_at:string;direction:string;fuel:string;driver_id:number|null;driver_name:string|null;vehicle:string;drums:number;drum_ml:number;total_ml:number;rate_paisa:number;amount_paisa:number;payment:string};
 type State={tanks:{fuel:string;stock_ml:number}[];drivers:Driver[];transactions:Tx[];payments:{id:number;driver_id:number;amount_paisa:number;created_at:string}[]};
-declare global {interface Window{depo?:{call:(action:string,input?:unknown)=>Promise<{ok:boolean;data?:State;error?:string;message?:string}>}}}
+type Action = 'snapshot' | 'driver' | 'record' | 'pay' | 'receipt' | 'backup' | 'restore';
+type Result = {ok:boolean;data?:State;error?:string;message?:string};
+type DepoAdapter = {call:(action:Action,input?:unknown)=>Promise<Result>};
+declare global {interface Window{depo?:DepoAdapter}}
+function getAdapter(): DepoAdapter | undefined { return window.depo; }
 const empty:State={tanks:[],drivers:[],transactions:[],payments:[]};
 const num=(n:number)=>n.toLocaleString('en-PK',{maximumFractionDigits:3});const money=(n:number)=>'PKR '+(n/100).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
 function App(){const [data,setData]=useState(empty),[page,setPage]=useState('Overview'),[notice,setNotice]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[search,setSearch]=useState(''),[selected,setSelected]=useState<number|null>(null);
- const desktop=!!window.depo;
- async function call(action:string,input?:unknown){if(!window.depo){setError('Open the desktop app to save records. This browser view is a layout preview.');return false;}setBusy(true);setError('');setNotice('');try{const r=await window.depo.call(action,input);if(!r.ok)throw Error(r.error);if(r.data)setData(r.data);setNotice(r.message||(action==='snapshot'?'':'Saved successfully'));return true;}catch(e){setError(e instanceof Error?e.message:'Unable to complete action');return false;}finally{setBusy(false);}}
+ const adapter=getAdapter();
+ const desktop=!!adapter;
+ async function call(action:Action,input?:unknown){if(!adapter){setError('Open the desktop app to save records. This browser view is a layout preview.');return false;}setBusy(true);setError('');setNotice('');try{const r=await adapter.call(action,input);if(!r.ok)throw Error(r.error);if(r.data)setData(r.data);setNotice(r.message||(action==='snapshot'?'':'Saved successfully'));return true;}catch(e){setError(e instanceof Error?e.message:'Unable to complete action');return false;}finally{setBusy(false);}}
  useEffect(()=>{void call('snapshot');},[]);
  const today=new Date().toLocaleDateString('en-CA');const dayTx=data.transactions.filter(t=>new Date(t.created_at).toLocaleDateString('en-CA')===today);const outstanding=data.drivers.reduce((n,d)=>n+d.balance_paisa,0);
  const [form,setForm]=useState({direction:'OUT',vehicle:'Zambad',fuel:'Diesel',drums:'',litersPerDrum:'200',rate:'',payment:'Cash',driverId:''});const change=(key:string,value:string)=>setForm(f=>({...f,[key]:value,...(key==='direction'&&value==='IN'?{payment:'Cash'}:{})}));
