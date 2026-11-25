@@ -1,0 +1,13 @@
+import {defaultProfile,validateProfile} from './profile.mjs';
+import {paymentParts} from './fuel.mjs';
+export const invoiceNumber=id=>'ND-'+String(id).padStart(5,'0');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'PKR '+(n/100).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2});
+export function invoiceHtml(t,format='A5'){
+ if(!['A4','A5','thermal'].includes(format))throw Error('Invalid receipt format');
+ const p=t.profile_json?validateProfile(JSON.parse(t.profile_json)):defaultProfile;
+ const pay=paymentParts(t);const rows=[['Driver',t.driver_name||'Walk-in'],['Vehicle',t.vehicle],['Fuel',t.fuel],['Drums',t.drums],['Total liters',t.total_ml/1000],['Rate per liter',money(t.rate_paisa)]];
+ if(t.drum_volumes_json)rows.push(['Measured drums (L)',JSON.parse(t.drum_volumes_json).map(v=>v/1000).join(', ')]);else rows.push(['Liters per drum',t.drum_ml/1000]);
+ const row=([k,v])=>'<tr><th>'+esc(k)+'</th><td>'+esc(v)+'</td></tr>';
+ return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data:"><title>'+invoiceNumber(t.id)+'</title><style>body{font:14px Arial,sans-serif;color:#172c29;margin:0;padding:12px;overflow-wrap:anywhere}h1{font-size:24px;margin:8px 0}h2{font-size:17px;margin:12px 0}header{text-align:center;border-bottom:2px solid #23564a;padding-bottom:12px}header img{max-height:70px;max-width:150px;object-fit:contain}p{line-height:1.5;margin:6px 0}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{text-align:left;padding:7px 3px;border-bottom:1px solid #ddd;vertical-align:top}th{width:42%;font-weight:normal}td{text-align:right}tr{break-inside:avoid}.total{font-weight:bold;font-size:18px;border-top:2px solid #23564a;padding:10px 0}footer{text-align:center;border-top:1px solid #ccc;padding-top:10px}'+(format==='thermal'?'body{font-size:11px;padding:3px}h1{font-size:17px}h2,.total{font-size:14px}th,td{padding:4px 1px}':'')+'</style></head><body><header>'+(p.logo?'<img alt="Depot logo" src="'+esc(p.logo)+'">':'')+'<h1>'+esc(p.name)+'</h1><p>'+esc([p.depotNumber,p.owner,p.phone,p.address].filter(Boolean).join(' · '))+'</p></header><h2>'+(t.direction==='IN'?'Purchase receipt':'Sales invoice')+' · '+invoiceNumber(t.id)+'</h2><p>'+esc(new Date(t.created_at).toLocaleString('en-PK'))+'</p><table>'+rows.map(row).join('')+'</table><div class="total">Total: '+money(t.amount_paisa)+'</div><table>'+[['Cash',money(pay.cash)],['Online',money(pay.online)],['Unpaid at issue',money(pay.credit)]].map(row).join('')+'</table><footer>'+esc(p.footer)+'<p>Nafto Depo</p></footer></body></html>';
+}

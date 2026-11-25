@@ -89,3 +89,5 @@ tbody tr:hover{background:#f6faf8}
 
 /* Fast counter entry and clear save confirmation */
 .quickChoices{display:flex;flex-wrap:wrap;gap:8px}.choice{background:var(--surface);border:1px solid #b9cdc3;color:var(--ink);padding:8px 14px;min-height:44px;max-width:100%;overflow-wrap:anywhere}.choice:hover:not(:disabled),.selectedChoice{background:#dceee5;color:#174e3e;border-color:#548674}.compactHint{margin:0 0 8px;font-size:13px}.billSaved{text-align:center;padding:32px 20px}.savedMark{margin:0 auto 12px;background:#dceee5;color:var(--brand);width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:36px;font-weight:700}.savedActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.savedActions button{min-height:48px}@media(max-width:500px){.savedActions{flex-direction:column}.savedActions button{width:100%}}
+
+.logoUpload{margin-top:20px}.profileLogo{display:block;max-width:160px;max-height:90px;object-fit:contain;margin:12px 0}.billSaved>label{max-width:260px;margin:16px auto}.savedActions{margin-top:16px}
