@@ -1,0 +1,3 @@
+# Browser demo (Phase 2)
+
+The browser supports the existing pilot operations using an isolated IndexedDB workspace. Use fictional data only. Reload persistence is intended, but browser eviction/clearing can remove data. No offline cold-start cache, browser backup/restore, PDF export or cross-device synchronization is provided yet. The Electron IPC and SQLite implementation are unchanged. Legacy per-liter pricing remains in both adapters pending the versioned fixed-210-liter migration. Run `npm test` and `npm run build`; verify browser reload and concurrent writes and existing Windows workflow before release.
