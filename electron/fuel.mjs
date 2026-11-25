@@ -32,3 +32,19 @@ export function calculateMovement(input) {
  if(!Number.isSafeInteger(amount)||amount<=0||amount>1e12)throw Error('Transaction is outside supported limits');
  return {drums:volumes.length,drumMl:Math.round(total/volumes.length),rate,total,amount,volumes};
 }
+
+export function splitPayment(input,amount) {
+ if(!Number.isSafeInteger(amount)||amount<=0)throw Error('Invalid invoice amount');
+ if(!['Cash','Credit','Online','Split'].includes(input.payment))throw Error('Invalid payment method');
+ const part=(v,label)=>v===0?0:positive(v,label,100);
+ const cash=input.payment==='Cash'?amount:input.payment==='Split'?part(input.cashPaid,'Cash payment'):0;
+ const online=input.payment==='Online'?amount:input.payment==='Split'?part(input.onlinePaid,'Online payment'):0;
+ if(cash+online>amount)throw Error('Payments exceed invoice total');
+ const credit=amount-cash-online;
+ if(input.direction==='IN'&&credit>0)throw Error('Supplier credit is not supported');
+ if(credit>0&&!input.driverId)throw Error('Select a driver for outstanding credit');
+ return {cash,online,credit,payment:credit>0?'Credit':'Cash'};
+}
+export function paymentParts(t) {
+ return {cash:t.cash_paisa??(t.payment==='Cash'?t.amount_paisa:0),online:t.online_paisa??0,credit:t.credit_paisa??(t.payment==='Credit'?t.amount_paisa:0)};
+}
